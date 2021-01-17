@@ -1,9 +1,6 @@
 
 # %%
 
-import time
-from time import localtime, sleep, strftime  # some timekeeping functions
-
 from matplotlib.animation import FuncAnimation  # for real time display
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,9 +9,7 @@ import numpy as np
 # This issue is discussed on Github discussion page "https://github.com/pyvisa/pyvisa/issues/392"
 #import visa  #here if using usb connection with vxi-11 or ni-visa
 import pyvisa as visa
-import pyvisa.constants
-from numpy import append  # need this to gather the data on the fly
-from pyvisa.constants import Parity, StopBits
+
 
 #from serial import SerialException
 rm = visa.ResourceManager()
@@ -29,7 +24,7 @@ ammeter = '5491B  Multimeter,Ver1.4.14.06.18,124D17150' # "ammeter" that measure
 
 #%%
 #Determine which resources are valid by issuing *IDN? query to all devices:
-valid_inst =[]
+
 return_list=[]
 print("Opening them in turn and asking who they are: ")
 for i in resources:
@@ -39,7 +34,7 @@ for i in resources:
         res_list.read_termination = '\n'
         res_list.write_termination = '\n'
         res_list.baud_rate = 38400
-        return_str = res_list.query('*IDN?')
+        return_str = res_list.query('*IDN?') # checks the name of the device
         if return_str == voltmeter:
             volts = res_list
         elif return_str == ammeter:
@@ -51,12 +46,12 @@ for i in resources:
 try:
     print("Voltmeter: ", volts)
 except NameError:
-    print("Could not find voltmeter")
+    NameError("Could not find voltmeter")
 
 try:
     print("Ammeter: ", amps)
 except NameError:
-    print("Could not find ammeter")
+    NameError("Could not find ammeter")
 
 #%%
 
@@ -66,18 +61,22 @@ plt.ylabel("Photocurrent (A)")
 xdata, ydata = [], []
 ln, = plt.plot([], [], 'ro')
 
-def init():
-    return ln,
+count = 0
+end_count = 50 # how many times data will be collected
 
-def update(frame):
-    voltage = float(volts.query("FETC?"))
-    amperage = float(amps.query("FETC?"))
-    xdata.append(voltage)
-    ydata.append(amperage)
-    ln.set_data(xdata, ydata)
-    ax.relim() 
-    ax.autoscale_view()
-    return ln,
+def update():
+
+    if count < end_count:
+        voltage = float(volts.query("FETC?"))
+        amperage = float(amps.query("FETC?"))
+        xdata.append(voltage)
+        ydata.append(amperage)
+        ln.set_data(xdata, ydata)
+        ax.relim() 
+        ax.autoscale_view()
+        count += 1
+
+        return ln,
 
 ani = FuncAnimation(fig, update)
 plt.show()
